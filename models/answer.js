@@ -1,5 +1,6 @@
 /*Create model for answer table*/
 function initAnswer(database){
+  var Sequelize = require('sequelize');
   //refers to location of the database
   var sequelize = database;
   //define table
