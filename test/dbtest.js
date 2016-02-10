@@ -2,71 +2,78 @@ var assert = require('assert');
 var dbcred = require('../dbcred.json');
 
 //Connect to mysql database
-var Sequelize = require('sequelize')
+var Sequelize = require('sequelize');
 var sequelize = new Sequelize('pollstest',dbcred.user,dbcred.password,
-    { host: 'localhost', 
+    { host: 'localhost',
       dialect: 'mysql',
       logging: false,
 });
-//Clear test database
-sequelize.drop();
 
 describe('Answer',function(){
-    it('Answer should be created successfully',function(){
-        var AnswerInit = require('../models/answer.js');
-        var Answer = AnswerInit(sequelize);
-        Answer.sync()
+    var AnswerInit = require('../models/answer.js');
+    var Answer = AnswerInit(sequelize);
+    Answer.drop();
+    it('should be created successfully',function(){
+        return Answer.sync()
             .then(function(){
-                return Answer.findAll()
+                return Answer.findAll();
             })
             .then(function(answers){
-                assert.equal(0,answers.length);
+                assert.equal(answers.length,0);
+            });
+    });
+
+    it('should be able to accept table entries',function(){
+        return Answer.create({answer: 'This is a test'})
+            .then(function(){
+                return Answer.findOne({where: {answer: 'This is a test'}});
             })
-            .catch(function(err){
-                console.log(err);
-                assert.equal(1,2);
+            .then(function(a){
+                assert.equal(a.dataValues.answer,'This is a test');
             });
     });
 });
 
 
 describe('Question',function(){
-    it('Question should be created successfully',function(){
-        var QuestionInit = require('../models/question.js');
-        var Question = QuestionInit(sequelize);
-        Question.sync()
+    var QuestionInit = require('../models/question.js');
+    var Question = QuestionInit(sequelize);
+    Question.drop();
+    it('should be created successfully',function(){
+        return Question.sync()
             .then(function(){
-                return Question.findAll()
+                return Question.findAll();
             })
             .then(function(questions){
                 assert.equal(0,questions.length);
+            });
+    });
+    it('should be able to accept table entries',function(){
+        return Question.create({question: 'This is a question.'})
+            .then(function(){
+                return Question.findOne({where: {question: 'This is a question.'}});
             })
-            .catch(function(err){
-                console.log(err);
-                assert.equal(1,2);
+            .then(function(q){
+                assert.equal(q.dataValues.question,'This is a question.');
             });
     });
 });
 
 describe('QuestionAnswer',function(){
-    it('QuestionAnswer should be created successfully',function(){
+    it('should be created successfully',function(){
         var QuestionInit = require('../models/question.js');
         var Question = QuestionInit(sequelize);
         var AnswerInit = require('../models/answer.js');
         var Answer = AnswerInit(sequelize);
         var QAInit= require('../models/questionanswer.js');
         var QuestionAnswer = QAInit(sequelize,Question,Answer);
-        QuestionAnswer.sync()
+        Question.drop(); Answer.drop(); QuestionAnswer.drop();
+        return QuestionAnswer.sync()
             .then(function(){
-                console.log('ayy lmao');
-                return QuestionAnswer.findAll()
+                return QuestionAnswer.findAll();
             })
             .then(function(qas){
                 assert.equal(0,qas.length);
-            })
-            .catch(function(err){
-                console.log(err);
-                assert.equal(1,2);
             });
     });
 });

@@ -5,8 +5,6 @@ function initQuestion(database){
   var Question = sequelize.define('Question',{
     questionID: {type:Sequelize.INTEGER, autoIncrement: true, primaryKey: true},
     question: Sequelize.STRING,
-    timestamps: true,
-    paranoid: true,
   });
   return Question;
 }
