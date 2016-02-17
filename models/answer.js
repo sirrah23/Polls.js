@@ -6,7 +6,7 @@ function initAnswer(database){
   //define table
   var Answer = sequelize.define('Answer',{
     answerID: {type:Sequelize.INTEGER, autoIncrement: true, primaryKey: true},
-    answer: Sequelize.STRING,
+    answer: Sequelize.STRING
   });
   return Answer;
 }

@@ -4,7 +4,7 @@ function initQuestion(database){
   var sequelize = database;
   var Question = sequelize.define('Question',{
     questionID: {type:Sequelize.INTEGER, autoIncrement: true, primaryKey: true},
-    question: Sequelize.STRING,
+    question: Sequelize.STRING
   });
   return Question;
 }
