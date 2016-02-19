@@ -31,30 +31,30 @@ qa.sync();
  * from these entries to the QA junction table.
  */
 function createPoll(poll){
-  sequelize.transaction(function(t){ //Run a SQL transaction
-    //Insert the question string into the Questions table
-    return question.create({'question': poll.question},{transaction: t})
-      .then(function (dbQuestion){
-        //Read the object that results from inserting into the database
-        //and read the resulting questionID that is generated
-        var questionID= dbQuestion.dataValues.questionID;
-        //Insert all the answers into the database (answer table)
-        return Promise.map(poll.answers, function(a){
-          return answer.create({'answer': a}, {transaction:t})
-            .then(function(dbAnswer){
-              var answerID = dbAnswer.dataValues.answerID;
-              qa.create({questionID:questionID,answerID:answerID},{transaction:t});
-            });
+  return sequelize.transaction(function(t){
+    var insertedData = {};
+    return question.create({question:poll.question})
+      .then(function(insertedQuestion){
+        insertedData.question = insertedQuestion;
+        return Promise.map(poll.answers,function(ans){
+          return answer.create({answer:ans});
         });
-      })
+      },{transaction:t})
+      .then(function(insertedAnswers){
+        insertedData.answers = insertedAnswers;
+        return;
+      },{transaction:t})
       .then(function(){
-        console.log('Poll has been created!');
-        return;
-      })
-      .catch(function(err){
-        console.log(err);
-        return;
-      });
+        Promise.map(insertedData.answers,function(insAns){
+          return qa.create({qID:insertedData.question.dataValues.questionID,
+                            aID:insAns.dataValues.answerID
+                           });
+        });
+      },{transaction:t});
+  })
+  .catch(function(err){
+    console.log(err);
+    return;
   });
 }
 
@@ -73,4 +73,4 @@ function getAllPolls(){
     });
 }
 
-//createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
+createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
