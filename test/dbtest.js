@@ -80,15 +80,14 @@ describe('Question',function(){
 });
 
 describe('QuestionAnswer',function(){
+    var QuestionInit = require('../models/question.js');
+    var Question = QuestionInit(sequelize);
+    var AnswerInit = require('../models/answer.js');
+    var Answer = AnswerInit(sequelize);
+    var QAInit= require('../models/questionanswer.js');
+    var QuestionAnswer = QAInit(sequelize,Question,Answer);
+    var models = [Question,Answer,QuestionAnswer];
     it('should be created successfully',function(){
-      var QuestionInit = require('../models/question.js');
-      var Question = QuestionInit(sequelize);
-      var AnswerInit = require('../models/answer.js');
-      var Answer = AnswerInit(sequelize);
-      var QAInit= require('../models/questionanswer.js');
-      var QuestionAnswer = QAInit(sequelize,Question,Answer);
-      var models = [Question,Answer,QuestionAnswer];
-
       return Promise.all(models.map(function(m){return m.drop();}))
         .then(function(){
           return Promise.all(models.map(function(m){return m.sync();}));
@@ -104,4 +103,27 @@ describe('QuestionAnswer',function(){
           assert(false);
         });
     });
+
+  it('should act as a junction table',function(){
+    return Question.create({question: 'Is this a test?'})
+      .then(function(newQuestion){
+        return Answer.create({answer: 'This is an answer.'})
+          .then(function(newAnswer){
+            return newAnswer.setQuestions(newQuestion);
+          });
+      })
+      .then(function(){
+        return QuestionAnswer.findAll();
+      })
+      .then(function(newQA){
+        //Assert a question and answer pair were added to the junction table
+        assert.deepEqual([newQA[0].dataValues.questionID,newQA[0].dataValues.answerID],[1,1]);
+        return;
+      })
+      .catch(function(err){
+        console.log(err);
+        assert(false);
+        return;
+      });
+  });
 });

@@ -66,11 +66,15 @@ function createPoll(poll){
  * strings
  */
 function getAllPolls(){
-  return qa.findAll()
-    .then(function(x){console.log(x);})
+  return question.findAll({include:[answer]})
+    .then(function(x){
+      console.log(x);
+      return;
+    })
     .catch(function(err){
       console.log(err);
     });
 }
 
 createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
+//getAllPolls();

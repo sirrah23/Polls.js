@@ -2,7 +2,7 @@
 function initQuestion(database){
   var Sequelize = require('sequelize');
   var sequelize = database;
-  var Question = sequelize.define('Question',{
+  var Question = sequelize.define('Questions',{
     questionID: {type:Sequelize.INTEGER, autoIncrement: true, primaryKey: true},
     question: Sequelize.STRING
   });

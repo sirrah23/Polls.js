@@ -4,7 +4,7 @@ function initAnswer(database){
   //refers to location of the database
   var sequelize = database;
   //define table
-  var Answer = sequelize.define('Answer',{
+  var Answer = sequelize.define('Answers',{
     answerID: {type:Sequelize.INTEGER, autoIncrement: true, primaryKey: true},
     answer: Sequelize.STRING
   });
