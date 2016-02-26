@@ -5,10 +5,10 @@ function initQuestionAnswer(database,question,answer){
   var QuestionAnswer = sequelize.define('QuestionAnswer');
   //Create junction table mapping questions and answers
   question.belongsToMany(answer, {through: QuestionAnswer,
-                                  foreignKey:'answerID',
+                                  foreignKey: 'questionID',
                                   constraints:false});
   answer.belongsToMany(question, {through: QuestionAnswer,
-                                  foreignKey:'questionID',
+                                  foreignKey: 'answerID',
                                   constraints: false});
   return QuestionAnswer;
 }

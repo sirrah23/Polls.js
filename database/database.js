@@ -31,33 +31,21 @@ qa.sync();
  * from these entries to the QA junction table.
  */
 function createPoll(poll){
-  return sequelize.transaction(function(t){
-    var insertedData = {};
-    return question.create({question:poll.question})
-      .then(function(insertedQuestion){
-        insertedData.question = insertedQuestion;
-        return Promise.map(poll.answers,function(ans){
-          return answer.create({answer:ans});
+  return question.create({question:poll.question})
+    .then(function(newQuestion){
+      return Promise.map(poll.answers,function(ans){
+        return answer.create({answer:ans});
+      })
+        .then(function(newAnswers){
+          console.log(newQuestion);
+          return newQuestion.addAnswers(newAnswers);
         });
-      },{transaction:t})
-      .then(function(insertedAnswers){
-        insertedData.answers = insertedAnswers;
-        return;
-      },{transaction:t})
-      .then(function(){
-        Promise.map(insertedData.answers,function(insAns){
-          return qa.create({qID:insertedData.question.dataValues.questionID,
-                            aID:insAns.dataValues.answerID
-                           });
-        });
-      },{transaction:t});
-  })
-  .catch(function(err){
-    console.log(err);
-    return;
-  });
+    })
+    .catch(function(err){
+      console.log(err);
+      return;
+    });
 }
-
 
 /*
  * This function returns a JSON object
@@ -77,4 +65,3 @@ function getAllPolls(){
 }
 
 createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
-//getAllPolls();
