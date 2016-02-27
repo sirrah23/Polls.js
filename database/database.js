@@ -7,11 +7,12 @@
 var dbcred = require('../dbcred.json');
 var Sequelize = require('sequelize');
 var Promise = require('bluebird');
+var _ = require('lodash');
 
 var sequelize = new Sequelize('polls',dbcred.user,dbcred.password,
                               { host: 'localhost',
                                 dialect: 'mysql',
-                                logging: false,
+                                logging: false
                               });
 
 /*Obtain the tables in from our database*/
@@ -31,20 +32,24 @@ qa.sync();
  * from these entries to the QA junction table.
  */
 function createPoll(poll){
-  return question.create({question:poll.question})
-    .then(function(newQuestion){
-      return Promise.map(poll.answers,function(ans){
-        return answer.create({answer:ans});
-      })
-        .then(function(newAnswers){
-          console.log(newQuestion);
-          return newQuestion.addAnswers(newAnswers);
-        });
-    })
-    .catch(function(err){
-      console.log(err);
-      return;
-    });
+  return sequelize.transaction(function (t){ //Run a SQL transaction
+    return question.create({question: poll.question},{transaction: t}) //Add question to question table
+      .then(function(newQuestion){
+        return Promise.map(poll.answers,function(ans){ // Add answers to answer table
+          return answer.create({answer:ans});
+        },{transaction: t})
+          .then(function(newAnswers){
+            return newQuestion.addAnswers(newAnswers); //Add question+answers to junction table
+          },{transaction:t});
+      });
+  })
+  .then(function(result){
+    return result; // Throw an error here later
+  })
+  .catch(function(err){
+    console.log(err);
+    return;
+  });
 }
 
 /*
@@ -55,13 +60,32 @@ function createPoll(poll){
  */
 function getAllPolls(){
   return question.findAll({include:[answer]})
-    .then(function(x){
-      console.log(x);
-      return;
+    .then(function(pollDataValues){
+      //Go through data and retrieve question strings
+      var dbQuestions = pollDataValues.map(function(pollDataValue){
+        return pollDataValue.dataValues.question;
+      });
+      //Go through data and retrieve arrays of answers for each question
+      var dbAnswers = pollDataValues
+        .map(function(pollDataValue){
+          return pollDataValue.Answers;
+        })
+        .map(function(answerSet){
+          return answerSet.map(function(answerMemb){
+            return answerMemb.dataValues.answer;
+          });
+        });
+      //Create the JSON object to be returned
+      var qaJSON = _.zip(dbQuestions,dbAnswers)
+                    .map(function(qaPair){
+                      return _.zipObject(['question','answers'],qaPair);
+                    });
+      return(qaJSON);
     })
     .catch(function(err){
       console.log(err);
     });
 }
 
-createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
+//createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
+//getAllPolls();
