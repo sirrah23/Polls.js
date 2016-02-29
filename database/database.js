@@ -61,10 +61,16 @@ function createPoll(poll){
 function getAllPolls(){
   return question.findAll({include:[answer]})
     .then(function(pollDataValues){
-      //Go through data and retrieve question strings
-      var dbQuestions = pollDataValues.map(function(pollDataValue){
-        return pollDataValue.dataValues.question;
+      //Go through data and retrieve question ids and strings
+      var dbQuestionData = pollDataValues.map(function(pollDataValue){
+        return {
+          'id' : pollDataValue.dataValues.questionID,
+          'question' : pollDataValue.dataValues.question
+        };
       });
+      //Split question data into its components
+      var dbQuestionIDs = dbQuestionData.map(function(dbItem){return dbItem.id;});
+      var dbQuestionStrings = dbQuestionData.map(function(dbItem){return dbItem.question;});
       //Go through data and retrieve arrays of answers for each question
       var dbAnswers = pollDataValues
         .map(function(pollDataValue){
@@ -76,10 +82,11 @@ function getAllPolls(){
           });
         });
       //Create the JSON object to be returned
-      var qaJSON = _.zip(dbQuestions,dbAnswers)
-                    .map(function(qaPair){
-                      return _.zipObject(['question','answers'],qaPair);
+      var qaJSON = _.zip(dbQuestionIDs,dbQuestionStrings,dbAnswers)
+                    .map(function(qaData){
+                      return _.zipObject(['questionID', 'question', 'answers'],qaData);
                     });
+      console.log(qaJSON);
       return(qaJSON);
     })
     .catch(function(err){
@@ -87,5 +94,8 @@ function getAllPolls(){
     });
 }
 
-//createPoll({'question':'Testing?????','answers':['dddd','l','aasdf','yolo']});
-//getAllPolls();
+createPoll({'question':'This is a test','answers':['opt1','opt2','opt3','opt4']})
+  .then(function(){
+    getAllPolls();
+  });
+
