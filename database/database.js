@@ -53,6 +53,41 @@ function createPoll(poll){
 }
 
 /*
+ * Given poll data, as retrieved from MySQL
+ * via Sequelize, will convert the question-
+ * answer data into the appropriate JSON format
+ */
+function pollToJSON(pollDataValues){
+  //Go through data and retrieve question ids and strings
+  var dbQuestionData = pollDataValues.map(function(pollDataValue){
+    return {
+      'id' : pollDataValue.dataValues.questionID,
+      'question' : pollDataValue.dataValues.question
+    };
+  });
+  //Split question data into its components
+  var dbQuestionIDs = dbQuestionData.map(function(dbItem){return dbItem.id;});
+  var dbQuestionStrings = dbQuestionData.map(function(dbItem){return dbItem.question;});
+  //Go through data and retrieve arrays of answers for each question
+  var dbAnswers = pollDataValues
+    .map(function(pollDataValue){
+      return pollDataValue.Answers;
+    })
+    .map(function(answerSet){
+      return answerSet.map(function(answerMemb){
+        return answerMemb.dataValues.answer;
+      });
+    });
+  //Create the JSON object to be returned
+  var qaJSON = _.zip(dbQuestionIDs,dbQuestionStrings,dbAnswers)
+                .map(function(qaData){
+                  return _.zipObject(['questionID', 'question', 'answers'],qaData);
+
+                });
+  return qaJSON;
+}
+
+/*
  * This function returns a JSON object
  * containing all the polls in the database
  * with a Question string and an array of Answer
@@ -61,41 +96,40 @@ function createPoll(poll){
 function getAllPolls(){
   return question.findAll({include:[answer]})
     .then(function(pollDataValues){
-      //Go through data and retrieve question ids and strings
-      var dbQuestionData = pollDataValues.map(function(pollDataValue){
-        return {
-          'id' : pollDataValue.dataValues.questionID,
-          'question' : pollDataValue.dataValues.question
-        };
-      });
-      //Split question data into its components
-      var dbQuestionIDs = dbQuestionData.map(function(dbItem){return dbItem.id;});
-      var dbQuestionStrings = dbQuestionData.map(function(dbItem){return dbItem.question;});
-      //Go through data and retrieve arrays of answers for each question
-      var dbAnswers = pollDataValues
-        .map(function(pollDataValue){
-          return pollDataValue.Answers;
-        })
-        .map(function(answerSet){
-          return answerSet.map(function(answerMemb){
-            return answerMemb.dataValues.answer;
-          });
-        });
-      //Create the JSON object to be returned
-      var qaJSON = _.zip(dbQuestionIDs,dbQuestionStrings,dbAnswers)
-                    .map(function(qaData){
-                      return _.zipObject(['questionID', 'question', 'answers'],qaData);
-                    });
-      console.log(qaJSON);
-      return(qaJSON);
+      return pollToJSON(pollDataValues);
     })
     .catch(function(err){
       console.log(err);
+      return;
     });
 }
 
+/*
+ * Given a poll ID, return the corresponding
+ * poll in JSON format. If the poll does not
+ * exist then return an empty object, {}.
+ */
+function getPollByID(id){
+  return question.findAll({
+    where: {
+      questionID: id
+    },
+    include: [answer]
+  })
+    .then(function(pollDataValues){
+      return pollToJSON(pollDataValues);
+    })
+    .catch(function(err){
+      console.log(err);
+      return;
+    });
+}
+
+/*
 createPoll({'question':'This is a test','answers':['opt1','opt2','opt3','opt4']})
   .then(function(){
-    getAllPolls();
+    return getAllPolls();
   });
-
+*/
+//getAllPolls().then(function(data){console.log(data);});
+//getPollByID(6).then(function(data){console.log(data);});
