@@ -1,8 +1,7 @@
 /*
  * This file exports an object that can perform
  * the operations we want on our SQL tables.
- */
-
+ */ 
 /*First obtain connection to MySQL database*/
 var dbcred = require('../dbcred.json');
 var Sequelize = require('sequelize');
@@ -116,8 +115,44 @@ function getPollByID(id){
     },
     include: [answer]
   })
-    .then(function(pollDataValues){
-      return pollToJSON(pollDataValues);
+    .then(function(pollDataValue){
+      return pollToJSON(pollDataValue);
+    })
+    .catch(function(err){
+      console.log(err);
+      return;
+    });
+}
+
+/*
+ * Given an poll ID this function will remove
+ * all questions and answers from their respective
+ * tables in the database (including the junction table)
+ */
+function deletePollByID(id){
+  return question.findAll({
+    where: {
+      questionID: id
+    },
+    include: [answer]
+  })
+    .then(function(pollDataValue){
+      if(pollDataValue.length === 0){ //cannot delete because it doesn't exist in database
+        return {};
+      }
+      var pollAnswers = pollDataValue[0].Answers;
+      return pollDataValue[0].removeAnswers(pollAnswers) //Remove question-answer links in junction table
+        .then(function(){
+          return pollDataValue[0].destroy(); //remove question from Questions table
+        })
+        .then(function(){
+          return Promise.map(pollAnswers,function(pollAnswer){
+            return pollAnswer.destroy(); //remove these answers from Answers table
+          });
+        })
+        .then(function(){
+          return {"Success": true};
+        });
     })
     .catch(function(err){
       console.log(err);
@@ -133,3 +168,4 @@ createPoll({'question':'This is a test','answers':['opt1','opt2','opt3','opt4']}
 */
 //getAllPolls().then(function(data){console.log(data);});
 //getPollByID(6).then(function(data){console.log(data);});
+//deletePollByID(3).then(function(val){console.log(val);});
