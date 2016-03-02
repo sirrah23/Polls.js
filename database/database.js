@@ -8,20 +8,15 @@ var Sequelize = require('sequelize');
 var Promise = require('bluebird');
 var _ = require('lodash');
 
-var sequelize = new Sequelize('polls',dbcred.user,dbcred.password,
-                              { host: 'localhost',
-                                dialect: 'mysql',
-                                logging: false
-                              });
-
-/*Obtain the tables in from our database*/
-var question = require('../models/question.js')(sequelize); //table that contains poll questions
-var answer = require('../models/answer.js')(sequelize); //table that contains poll answers
-var qa = require('../models/questionanswer.js')(sequelize,question,answer); //question-answer junction table
-
-question.sync();
-answer.sync();
-qa.sync();
+/*
+ * Constructor for database object
+ */
+function db(sequelize, question, answer, qa){
+  this.sequelize = sequelize;
+  this.question = question;
+  this.answer = answer;
+  this.qa = qa;
+}
 
 /*
  * Given a JSON object that contains a question string
@@ -30,12 +25,13 @@ qa.sync();
  * the answers to the Answers table, and all the IDs
  * from these entries to the QA junction table.
  */
-function createPoll(poll){
-  return sequelize.transaction(function (t){ //Run a SQL transaction
-    return question.create({question: poll.question},{transaction: t}) //Add question to question table
+db.prototype.createPoll = function(poll){
+  var self = this;
+  return self.sequelize.transaction(function (t){ //Run a SQL transaction
+    return self.question.create({question: poll.question},{transaction: t}) //Add question to question table
       .then(function(newQuestion){
         return Promise.map(poll.answers,function(ans){ // Add answers to answer table
-          return answer.create({answer:ans});
+          return self.answer.create({answer:ans});
         },{transaction: t})
           .then(function(newAnswers){
             return newQuestion.addAnswers(newAnswers); //Add question+answers to junction table
@@ -56,7 +52,8 @@ function createPoll(poll){
  * via Sequelize, will convert the question-
  * answer data into the appropriate JSON format
  */
-function pollToJSON(pollDataValues){
+db.prototype.pollToJSON = function(pollDataValues){
+  var self = this;
   //Go through data and retrieve question ids and strings
   var dbQuestionData = pollDataValues.map(function(pollDataValue){
     return {
@@ -92,10 +89,11 @@ function pollToJSON(pollDataValues){
  * with a Question string and an array of Answer
  * strings
  */
-function getAllPolls(){
-  return question.findAll({include:[answer]})
+db.prototype.getAllPolls = function(){
+  var self = this;
+  return self.question.findAll({include:[self.answer]})
     .then(function(pollDataValues){
-      return pollToJSON(pollDataValues);
+      return self.pollToJSON(pollDataValues);
     })
     .catch(function(err){
       console.log(err);
@@ -108,15 +106,16 @@ function getAllPolls(){
  * poll in JSON format. If the poll does not
  * exist then return an empty object, {}.
  */
-function getPollByID(id){
-  return question.findAll({
+db.prototype.getPollByID = function(id){
+  var self = this;
+  return self.question.findAll({
     where: {
       questionID: id
     },
-    include: [answer]
+    include: [self.answer]
   })
     .then(function(pollDataValue){
-      return pollToJSON(pollDataValue);
+      return self.pollToJSON(pollDataValue);
     })
     .catch(function(err){
       console.log(err);
@@ -125,16 +124,17 @@ function getPollByID(id){
 }
 
 /*
- * Given an poll ID this function will remove
+ * Given an poll ID self function will remove
  * all questions and answers from their respective
  * tables in the database (including the junction table)
  */
-function deletePollByID(id){
-  return question.findAll({
+db.prototype.deletePollByID = function(id){
+  var self = this;
+  return self.question.findAll({
     where: {
       questionID: id
     },
-    include: [answer]
+    include: [self.answer]
   })
     .then(function(pollDataValue){
       if(pollDataValue.length === 0){ //cannot delete because it doesn't exist in database
@@ -160,12 +160,5 @@ function deletePollByID(id){
     });
 }
 
-/*
-createPoll({'question':'This is a test','answers':['opt1','opt2','opt3','opt4']})
-  .then(function(){
-    return getAllPolls();
-  });
-*/
-//getAllPolls().then(function(data){console.log(data);});
-//getPollByID(6).then(function(data){console.log(data);});
-//deletePollByID(3).then(function(val){console.log(val);});
+
+module.exports = db;
