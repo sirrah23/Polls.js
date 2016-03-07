@@ -41,6 +41,16 @@ router.get('/polls', function(req, res, next) {
     });
 });
 
+/*Get a poll by it's id as JSON*/
+router.get('/polls/:id',function(req,res,next){
+  dbInstance.getPollByID(req.params.id)
+    .then(function(poll){
+      res.setHeader('Content-Type', 'application/json');
+      res.send(JSON.stringify(poll)); //Send back JSON object containing polls
+    });
+});
+
+
 /*Create a poll based on JSON sent by user*/
 router.post('/create/poll',function(req,res,next){
   var keys = Object.keys(req.body);
