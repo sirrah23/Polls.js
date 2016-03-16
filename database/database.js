@@ -160,5 +160,27 @@ db.prototype.deletePollByID = function(id){
     });
 }
 
+/*
+ * Drops all tables in the database.
+*/
+db.prototype.deleteAll = function(){
+  var that = this;
+  return Promise.map([that.question,that.answer,that.qa],function(table){
+    return table.drop();
+  })
+  .then(function(){
+    return Promise.map([that.question,that.answer,that.qa],function(table){
+      return table.sync();
+    });
+  })
+  .then(function(){
+    return {"Success": true};
+  })
+  .catch(function(err){
+    console.log(err);
+    return {};
+  });
+}
+
 
 module.exports = db;

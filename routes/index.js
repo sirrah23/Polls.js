@@ -89,5 +89,16 @@ module.exports = function(dbInfo){
       });
   });
 
+  router.delete('/polls',function(req,res,next){
+    dbInstance.deleteAll()
+      .then(function(result){
+        if (_.isEmpty(result)){
+          res.sendStatus(404);
+        } else {
+          res.send(JSON.stringify(result));
+        }
+      });
+  });
+
   return router;
 };
