@@ -182,5 +182,83 @@ db.prototype.deleteAll = function(){
   });
 }
 
+db.prototype.voteUp= function(id,answer){
+  var self = this;
+  return self.answer.findAll({
+    where: {
+      "answer": answer
+    },
+    include: [self.question]
+  })
+  .then(function(answersInfo){
+    var updateAns = answersInfo.filter(function(answerInfo){
+      return answerInfo.Questions[0].dataValues.questionID ==id;
+    });
+    if (updateAns != []){
+      return updateAns[0].update({'votes': (updateAns[0].votes+1)})
+        .then(function(updatedAns){
+          return updatedAns;
+        });
+    } else {
+      return {};
+    }
+  });
+}
+
+/*
+ * Given an answer and a poll
+ * it will increment the number
+ * of votes for that answer.
+ */
+db.prototype.voteUp= function(id,answer){
+  var self = this;
+  return self.answer.findAll({
+    where: {
+      "answer": answer
+    },
+    include: [self.question]
+  })
+    .then(function(answersInfo){
+      var updateAns = answersInfo.filter(function(answerInfo){
+        return answerInfo.Questions[0].dataValues.questionID ==id;
+      });
+      if (updateAns != []){
+        return updateAns[0].update({'votes': (updateAns[0].votes+1)})
+          .then(function(updatedAns){
+            return updatedAns;
+          });
+      } else {
+        return {};
+      }
+    });
+}
+
+/*
+ * Given an answer and a poll
+ * it will decrement the number
+ * of votes for that answer.
+ */
+db.prototype.voteDown= function(id,answer){
+  var self = this;
+  return self.answer.findAll({
+    where: {
+      "answer": answer
+    },
+    include: [self.question]
+  })
+    .then(function(answersInfo){
+      var updateAns = answersInfo.filter(function(answerInfo){
+        return answerInfo.Questions[0].dataValues.questionID ==id;
+      });
+      if (updateAns != []){
+        return updateAns[0].update({'votes': (updateAns[0].votes-1)})
+          .then(function(updatedAns){
+            return updatedAns;
+          });
+      } else {
+        return {};
+      }
+    });
+}
 
 module.exports = db;
